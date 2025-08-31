@@ -25,7 +25,7 @@ class Parser:
                 self.advance()
                 continue
 
-            stmnt=res.register(self.expression())
+            stmnt=res.register(self.statement())
             if res.error:
                 return res
             
@@ -54,7 +54,7 @@ class Parser:
                 return res.success(node)
             return res.success(node)
     
-        node=res.register(self.expression(calc=True,expression_meta_data=expression_meta_data))
+        node=res.register(self.expression(expression_meta_data=expression_meta_data))
         if res.error:
             return res
         return res.success(node)
@@ -149,7 +149,7 @@ class Parser:
         if token.type==TokenTypes["TT_LP"]:
             res.register_advance()
             self.advance()
-            node=res.register(self.expression(calc=True,expression_meta_data=expression_meta_data))
+            node=res.register(self.expression(expression_meta_data=expression_meta_data))
             if res.error:
                 return res
             if self.current_token.type==TokenTypes["TT_RP"]:
@@ -189,10 +189,9 @@ class Parser:
                 return res
         return res.success(node)
 
-    def expression(self, calc=False,expression_meta_data={"prev_token_type":None}):
+    def expression(self,expression_meta_data={"prev_token_type":None}):
         res= ParserResult()
-
-        if calc and self.current_token is not None:
+        if self.current_token is not None:
             node=res.register(self.term(expression_meta_data))
             if res.error:
                 return res
@@ -202,71 +201,77 @@ class Parser:
                     return res
             return res.success(node)
 
-        if not calc and  self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"]:
-            variable_token=self.current_token
+    def assignmentStatement(self):
+        res=ParserResult()
+        variable_token=self.current_token
+        res.register_advance()
+        self.advance()
+        
+        if self.current_token is not None and self.current_token.value!="is":
+            res.failure("Expected 'is'")
+
+        res.register_advance()
+        self.advance()
+
+        node=res.register(self.condExpression())
+        if res.error:
+            return res
+        
+
+        self.variables.append(str(variable_token.value))
+        if self.current_token is None and self.current_token.type!=TokenTypes["TT_TERMINATOR"]:
+            return res.failure("Expected ';'")
+        res.register_advance()
+        self.advance()
+        return res.success(VariableNode(variable_token_name=variable_token.value, variable_node=node))
+    
+    def showStatement(self):
+        res=ParserResult()
+        res.register_advance()
+        self.advance()
+        if self.current_token.type!=TokenTypes["TT_LP"]:
+            return res.failure("Expected '('")
+        
+        res.register_advance()
+        self.advance()
+        body=[]
+        if self.current_token == TokenTypes['TT_RP']:
+            return res.success(ShowNode(body))
+        exp=res.register(self.condExpression())
+        if res.error:
+            return res
+        body.append(exp)
+        while self.current_token is not None and self.current_token==TokenTypes['TT_SEPERATOR']:
             res.register_advance()
             self.advance()
-            
-            if self.current_token is not None and self.current_token.value!="is":
-                res.failure("Expected 'is'")
-
-            res.register_advance()
-            self.advance()
-
-            # if self.current_token is None:
-            #     return res.failure("Expected 'Literal'")
-
-            # node=res.register(self.expression(calc=True))
-            # if res.error:
-            #     return res
-            # this code is to check if the expression is present to be assigned to the variable and this code is moved to the condExpresssion() method
-             
-            node=res.register(self.condExpression())
-            if res.error:
-                return res
-            
-
-            self.variables.append(str(variable_token.value))
-            if self.current_token is None and self.current_token.type!=TokenTypes["TT_TERMINATOR"]:
-                return res.failure("Expected ';'")
-            res.register_advance()
-            self.advance()
-            return res.success(VariableNode(variable_token_name=variable_token.value, variable_node=node))
-
-        if self.current_token is not None and self.current_token.type== TokenTypes["TT_KEYWORD"] and self.current_token.value=="show":
-            res.register_advance()
-            self.advance()
-            if self.current_token.type!=TokenTypes["TT_LP"]:
-                return res.failure("Expected '('")
-            
-            res.register_advance()
-            self.advance()
-            body=[]
-            if self.current_token == TokenTypes['TT_RP']:
-                return res.success(ShowNode(body))
-            exp=res.register(self.expression(calc=True))
+            exp=res.register(self.condExpression())
             if res.error:
                 return res
             body.append(exp)
-            while self.current_token is not None and self.current_token==TokenTypes['TT_SEPERATOR']:
-                res.register_advance()
-                self.advance()
-                exp=res.register(self.expression(calc=True))
-                if res.error:
-                    return res
-                body.append(exp)
 
-            if self.current_token != TokenTypes['TT_RP']:
-                return res.failure("Expected ')'")
-            res.register_advance()
-            self.advance()
-            if self.current_token is None and self.current_token.type!=TokenTypes["TT_TERMINATOR"]:
-                return res.failure("Expected '.'")
-            res.register_advance()
-            self.advance()
-            return res.success(ShowNode(body))
+        if self.current_token != TokenTypes['TT_RP']:
+            return res.failure("Expected ')'")
+        res.register_advance()
+        self.advance()
+        if self.current_token is None and self.current_token.type!=TokenTypes["TT_TERMINATOR"]:
+            return res.failure("Expected '.'")
+        res.register_advance()
+        self.advance()
+        return res.success(ShowNode(body))
 
-    
+    def statement(self):
+        res=ParserResult()
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"]:
+            node=res.register(self.assignmentStatement())
+            if res.error:
+                return res
+            return res.success(node)
+        
+        if self.current_token is not None and self.current_token.type== TokenTypes["TT_KEYWORD"] and self.current_token.value=="show":
+            node=res.register(self.showStatement())
+            if res.error:
+                return res
+            return res.success(node)
 
     def generate(self):
         return self.expression()
