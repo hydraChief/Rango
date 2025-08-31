@@ -47,3 +47,10 @@ class LogicalNode:
         self.value=value
         self.left=left
         self.right=right
+
+class ConditionalNode:
+    def __init__(self,value,condition,body=[],elseIfBlockNodes=[]):
+        self.value=value
+        self.condition=condition
+        self.body=body
+        self.elseIfBlockNodes=elseIfBlockNodes
