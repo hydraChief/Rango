@@ -1,4 +1,4 @@
-from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, ComparatorNode,LogicalNode
+from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, ComparatorNode,LogicalNode, ConditionalNode
 from ErrorHandler import ParserResult
 from Tokenizer import TokenTypes, tokenGenerator
 
@@ -259,6 +259,40 @@ class Parser:
         self.advance()
         return res.success(ShowNode(body))
 
+    def ifStatement(self):
+        res=ParserResult()
+        value=self.current_token.value
+        res.register_advance()
+        self.advance()
+        if self.current_token is None:
+            return res.failure("Expected Condition Expression")
+        condition_node=res.register(self.condExpression)
+        if res.error:
+            return res
+        if self.current_token is None:
+            return res.failure("Expected '{'")
+        
+        body=None
+        if self.current_token.value==TokenTypes["TT_BLOCKSTART"]:
+            res.register_advance()
+            self.advance()
+            body=res.register(self.parse())
+            if res.error:
+                return res
+
+        if self.current_token is None or self.current_token.value!=TokenTypes["TT_BLOCKEND"]:
+            return res.failure("Expected '}'")
+
+        res.register_advance()
+        self.advance()
+        elseIfBlockNodes=[]
+        if value=="if":
+            while self.current_token is not None and self.current_token.type==TokenTypes["TT_CONDITIONAL"] and self.current_token.value!="if":
+                elseIfStatement=res.register(self.ifStatement())
+                if res.error:
+                    return res
+                elseIfBlockNodes.append(elseIfStatement)
+        return res.success(ConditionalNode(value=value,condition=condition_node,body=body,elseIfBlockNodes=elseIfBlockNodes))
     def statement(self):
         res=ParserResult()
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"]:
@@ -273,6 +307,13 @@ class Parser:
                 return res
             return res.success(node)
 
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_CONDITIONAL"]:
+            if self.current_token.value!="if":
+                return res.failure("Expected 'if'")
+            node=res.register(self.ifStatement())
+            if res.error:
+                return res
+            return res.success(node)
     def generate(self):
         return self.expression()
     
