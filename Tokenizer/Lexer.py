@@ -48,6 +48,12 @@ class Lexer:
             elif char == ',':
                 tokens.append(Token(TokenTypes['TT_SEPERATOR'], value=',',start=self.pos.copy()))
                 self.advance()
+            elif char == '{':
+                tokens.append(Token(TokenTypes['TT_BLOCKSTART'], value='{',start=self.pos.copy()))
+                self.advance()
+            elif char == '}':
+                tokens.append(Token(TokenTypes['TT_BLOCKEND'], value='}',start=self.pos.copy()))
+                self.advance()
             elif char in Letters:
                 tokens.append(self.create_identifier())
                 self.advance()
@@ -99,7 +105,7 @@ class Lexer:
             id_str+=self.current
             self.advance()
         if id_str in KEYWORDS:
-            return Token(KEYWORDS[id_str],id_str,start_pos,self.pos.copy())
+            return Token(TokenTypes[KEYWORDS[id_str]],id_str,start_pos,self.pos.copy())
         return Token(TokenTypes['TT_IDENTIFIER'],id_str,start_pos,self.pos.copy())
 
 def tokenGenerator(filename):

@@ -35,3 +35,15 @@ class VariableAccessNode:
 class BooleanNode:
     def __init__(self,value):
         self.value= True if value in ("true") else False
+
+class ComparatorNode:
+    def __init__(self,left,value,right):
+        self.value=value
+        self.left=left
+        self.right=right
+
+class LogicalNode:
+    def __init__(self,value,left,right):
+        self.value=value
+        self.left=left
+        self.right=right
