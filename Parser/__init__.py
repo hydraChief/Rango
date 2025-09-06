@@ -1,3 +1,3 @@
 from .Parser import run
 
-all=['run']
+__all__=['run']

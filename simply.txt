@@ -1,0 +1,18 @@
+a is (true and false) or true;
+b is a;
+show(a);
+if false {
+    show("it works");
+} else_if false {
+    show("else_if block 1");
+} else_if false {
+    show("else_if block 2");
+} else {
+    c is 3;
+    show(b);
+    show("else block");
+    show(1234344);
+}
+show(c);
+
+//variable scoping has to thinked of and loops and function and return -->version 1

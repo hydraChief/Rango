@@ -33,8 +33,8 @@ class VariableAccessNode:
         self.variable_token_name=variable_token_name
 
 class BooleanNode:
-    def __init__(self,value):
-        self.value= True if value in ("true") else False
+    def __init__(self,value=False):
+        self.value= value
 
 class ComparatorNode:
     def __init__(self,left,value,right):

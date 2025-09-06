@@ -1,3 +1,3 @@
 from .ErrorHandler import *
 
-all=["ASResult","ParserResult"]
+__all__=["ASResult","ParserResult"]

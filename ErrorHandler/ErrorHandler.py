@@ -5,8 +5,10 @@ class ASResult:
 
     def register(self,res):
         if res.error:
-            self.error=res.none
-        return self.value
+            self.error=res.error
+        else:
+            self.value=res.value
+        return res.value
     
     def failure(self,error):
         self.error=error
@@ -27,10 +29,10 @@ class ParserResult:
 
     def register(self, res):
         if res is not None:
+            self.advance_count += res.advance_count
             if res.error:
-                self.advance_count+=res.advance_count
                 self.error=res.error
-            return self.node
+            return res.node
     
     def success(self,node):
         self.node=node
