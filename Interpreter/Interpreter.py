@@ -1,8 +1,15 @@
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from ErrorHandler import ASResult
 from Parser import run as parserRun
+from Logger import get_logger
+from Tokenizer import TokenTypes
 class Interpreter():
     def __init__(self):
         self.symbolTable=SymbolTable()
+        self.logger = get_logger()
 
     def visitStatementsNode(self,node):
         res=ASResult()
@@ -23,18 +30,20 @@ class Interpreter():
         right =res.register(self.visit(node.right))
         if res.error:
             return res
-
+        ans=None
         try:
-            if(node.op.type=='TT_PLUS'):
+            if(node.op.type==TokenTypes['TT_PLUS']):
                 ans= left+right
-            elif(node.op.type=='TT_MINUS'):
+            elif(node.op.type==TokenTypes['TT_MINUS']):
                 ans= left-right
-            elif(node.op.type=='TT_MUL'):
+            elif(node.op.type==TokenTypes['TT_MUL']):
                 ans= left*right
-            elif(node.op.type=='TT_DIV'):
+            elif(node.op.type==TokenTypes['TT_DIV']):
                 ans= left/right
+            self.logger.log_binary_operation(left, node.op.type, right, ans)
             res.success(ans)
         except Exception as e:
+            self.logger.error(f"Binary operation failed", left=str(left), operator=node.op.type, right=str(right), error=str(e))
             res.failure(e)
         finally:
             return res
@@ -49,12 +58,15 @@ class Interpreter():
     
     def visitShowNode(self,node):
         res=ASResult()
+        values = []
         for exp in node.body:
             val=res.register(self.visit(exp))
             if res.error:
                 return res
+            values.append(val)
             print(val)
         print()
+        self.logger.log_show_statement(values)
         return res.success(node.body)
         
     def visitVariableNode(self,node):
@@ -62,14 +74,19 @@ class Interpreter():
         exp_ans=res.register(self.visit(node.variable_node))
         if not res.error:
             self.symbolTable.set(node.variable_token_name,exp_ans)
+            self.logger.log_variable_assignment(node.variable_token_name, exp_ans)
             return res.success(exp_ans)
         return res.failure(res.error)
 
     def visitVariableAccessNode(self,node):
         res=ASResult()
         if self.symbolTable.present(node.variable_token_name):
-            return res.success(self.symbolTable.get(node.variable_token_name))
-        return res.failure("Variable '{node.variable_token_name}' is not defined")
+            value = self.symbolTable.get(node.variable_token_name)
+            self.logger.log_variable_access(node.variable_token_name, value)
+            return res.success(value)
+        error_msg = f"Variable '{node.variable_token_name}' is not defined"
+        self.logger.error(error_msg)
+        return res.failure(error_msg)
 
     def noVisit(self,node):
         res=ASResult()
@@ -92,10 +109,12 @@ class SymbolTable:
 
 
     def get(self,name):
-        value = self.symbols.get(name)
-        if value==None and self.parent:
+        value=None
+        if self.present(name):
+            value=self.symbols[name]
+        elif self.parent:
             return self.parent.get(name)
-        elif value==None:
+        else:
             raise Exception(f"Variable '{name}' not defined")
         return value
 
@@ -106,19 +125,32 @@ class SymbolTable:
         return name in self.symbols
 
 def run(filename):
+    logger = get_logger()
+    logger.info(f"Starting Rango interpreter execution", filename=filename)
+    
     symbol_table = SymbolTable()
     interpreter = Interpreter()
+    
+    logger.info("Calling parser...")
     ast, error = parserRun(filename)
+    
     if ast is None:
+        logger.error("Parser returned None")
         return None, "Parser returned None"
     
     if error is None:
+        logger.log_interpretation_start()
         result: ASResult| None = interpreter.visit(ast)
         if result.error:
+            logger.log_interpretation_error(result.error)
             return result.value, result.error
+        logger.log_interpretation_complete(result.value)
+        logger.log_session_end()
         return result.value, error
     else:
+        logger.error(f"Parser error occurred", error=str(error))
+        logger.log_session_end()
         return None, error
     
-if __name__=="main":
+if __name__ == "__main__":
     run("simply.txt")
