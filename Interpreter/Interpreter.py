@@ -21,6 +21,8 @@ class Interpreter():
                 return res
             if loopContext is not None and (loopContext.isStop or loopContext.isContinue):
                 return res.success(value)
+            if functionContext is not None and functionContext.isReturn:
+                return res.success(value)
             value.append(vl)
         return res.success(value)
 
@@ -71,8 +73,10 @@ class Interpreter():
             if res.error:
                 return res
             values.append(val)
-            print(val)
-        print()
+        if len(values):
+            print(*values)
+        else:
+            print()
         self.logger.log_show_statement(values)
         return res.success(node.body)
         
@@ -167,7 +171,6 @@ class Interpreter():
             return res.failure("Error while performing Relational Operation")
         return res.success(ans)
 
-
     def visitTillNode(self,node,functionContext=None,parentSymbolTable=None,**kwargs):
         res=ASResult()
         node.symbolTable.parent=parentSymbolTable
@@ -224,6 +227,34 @@ class Interpreter():
             return res.failure("encountered 'continue' statement outside loop")
         loopContext.isContinue=True
         return res.success(None)
+
+    def visitFunctionCallNode(self,node,parentSymbolTable,loopContext=None,**kwargs):
+        res= ASResult()
+        node.symbolTable.parent=parentSymbolTable
+        func=node.symbolTable.getFunctionDefinition(node.value)
+        if len(func["params"]) != len(node.args):
+            return res.failure(f"Expected {len(func['params'])} arguments but got {len(node.args)}")
+        
+        for param,arg in zip(func["params"],node.args):
+            arg=res.register(self.visit(arg,parentSymbolTable=node.symbolTable))
+            if res.error:
+                return res
+            node.symbolTable.addArgument(name=node.value,param=param,arg=arg)
+            
+        res.register(self.visit(func["body"],loopContext=None,functionContext=node,parentSymbolTable=node.symbolTable))
+        if res.error:
+            return res
+        if node.isReturn:
+            return res.success(node.returnValue)
+        return res.success(None)
+
+    def visitFunctionDefinitionNode(self,node,parentSymbolTable=None,**kwargs):
+        res= ASResult()
+        if parentSymbolTable:
+            parentSymbolTable.addFunction(name=node.value,body=node.body,params=node.params)
+            return res.success(None)
+        return res.failure("Encountered Function Definition Outside Global Scope")
+        
 
     def visitReturnNode(self,node,parentSymbolTable,functionContext=None,**kwargs):
         res= ASResult()

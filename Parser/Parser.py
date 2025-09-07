@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode
+from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode, FunctionDefinitionNode, FunctionCallNode
 from ErrorHandler import ParserResult
 from Tokenizer import TokenTypes, tokenGenerator, KEYWORDS
 from Logger import get_logger
@@ -426,8 +426,109 @@ class Parser:
         self.advance()
         return res.success(ContinueNode())
     
+    def functionDefinitionStatement(self):
+        res=ParserResult()
+        res.register_advance()
+        self.advance()
+        if self.current_token is None:
+            return res.failure("Expected Function Name")
+        name=self.current_token.value
+
+        res.register_advance()
+        self.advance()
+
+        if self.current_token is None or self.current_token.type != TokenTypes["TT_LP"]:
+            return res.failure("Expected '('")
+        res.register_advance()
+        self.advance()
+        params=[]
+        if self.current_token is not None and self.current_token.type == TokenTypes["TT_RP"]:
+            res.register_advance()
+            self.advance()
+            body=res.register(self.parseBlock())
+            if res.error:
+                return res
+            return res.success(FunctionDefinitionNode(name=name,params=params,body=body))
+        if self.current_token is not None and self.current_token.type == TokenTypes["TT_IDENTIFIER"]:
+            params.append(self.current_token.value)
+            res.register_advance()
+            self.advance()
+        while self.current_token is not None and self.current_token.type == TokenTypes["TT_SEPERATOR"]:
+            res.register_advance()
+            self.advance()
+            if self.current_token is not None and self.current_token.type == TokenTypes["TT_IDENTIFIER"]:
+                params.append(self.current_token.value)
+                res.register_advance()
+                self.advance()
+            else:
+                return res.failure("Expected Identifier")
+        if self.current_token is None or self.current_token.type != TokenTypes["TT_RP"]:
+            return res.failure("Expected ')'" )
+        res.register_advance()
+        self.advance()
+        body=res.register(self.parseBlock())
+        if res.error:
+            return res
+        return res.success(FunctionDefinitionNode(value=name,params=params,body=body))
+        
+    def functionCallStatement(self):
+        res= ParserResult()
+        name=self.current_token.value
+        res.register_advance()
+        self.advance()
+        if self.current_token is None or self.current_token.type!=TokenTypes["TT_LP"]:
+            return res.failure("Expected '('")
+        res.register_advance()
+        self.advance()
+        args=[]
+        if self.current_token is not None and self.current_token.type == TokenTypes["TT_RP"]:
+            res.register_advance()
+            self.advance()
+            if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
+                return res.failure("Expected ';'")
+            res.register_advance()
+            self.advance()
+            return res.success(FunctionCallNode(value=name,args=args))
+        
+        if self.current_token is not None:
+            arg=res.register(self.condExpression())
+            if res.error:
+                return res
+            args.append(arg)
+        while self.current_token is not None and self.current_token.type == TokenTypes["TT_SEPERATOR"]:
+            res.register_advance()
+            self.advance()
+            if self.current_token is not None:
+                arg=res.register(self.condExpression())
+                if res.error:
+                    return res
+                args.append(arg)
+            else:
+                return res.failure("Expected expression")
+        if self.current_token is None or self.current_token.type != TokenTypes["TT_RP"]:
+            return res.failure("Expected ')'" )
+        res.register_advance()
+        self.advance()
+        if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
+            return res.failure("Expected ';'")
+        res.register_advance()
+        self.advance()
+        return res.success(FunctionCallNode(value=name,args=args))
+
     def statement(self):
         res=ParserResult()
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"] and (self.current_token_index+1<len(self.tokens) and self.tokens[self.current_token_index+1].type==TokenTypes["TT_LP"]):
+            node=res.register(self.functionCallStatement())
+            if res.error:
+                return res
+            return res.success(node)
+        
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_FUNCTIONDEFINITION"]:
+            node=res.register(self.functionDefinitionStatement())
+            if res.error:
+                return res
+            return res.success(node)
+
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"]:
             node=res.register(self.assignmentStatement())
             if res.error:

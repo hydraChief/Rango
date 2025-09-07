@@ -89,10 +89,15 @@ class ReturnNode:
         self.value=value
         self.returnValue=None
 
-class FunctionNode:
-    def __init__(self,value,params,body):
+class FunctionDefinitionNode:
+    def __init__(self,value,body,params=[]):
         self.value=value
         self.params=params
         self.body=body
+class FunctionCallNode:
+    def __init__(self,value,args=[]):
+        self.value=value
+        self.args=args
+        self.returnValue=None
         self.isReturn=False
         self.symbolTable=SymbolTable()

@@ -1,34 +1,6 @@
-a is (true and false) or true;
-b is a;
-show(a);
-c is 2;
-if false {
-    show("it works");
-} else_if false {
-    show("else_if block 1");
-} else_if false {
-    show("else_if block 2");
-} else {
-    c is 3;
-    show(b);
-    show("else block");
-    show(1234344);
+does x(par1,par2){
+    show(par1,par2);
 }
-c is c+1;
-show(c);
-i is 5;
-repeat (2*3+5*(1)) times {
-    i is i-1;
-    show("inside repeat loop");
-    if i eq 4{
-        d is 1;
-        show("d ");
-        show(d);
-    }
-    show(d);
-
-    if i eq 0{
-        stop;
-    }
-}
+show("calling function");
+x(1,2);
 
