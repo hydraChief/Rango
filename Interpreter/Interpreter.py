@@ -19,7 +19,7 @@ class Interpreter():
             vl=res.register(self.visit(stmnt,loopContext=loopContext,functionContext=functionContext))
             if res.error:
                 return res
-            if loopContext is not None and loopContext.isStop:
+            if loopContext is not None and (loopContext.isStop or loopContext.isContinue):
                 return res.success(value)
             value.append(vl)
         return res.success(value)
@@ -173,11 +173,38 @@ class Interpreter():
             condition_val=res.register(self.visit(node.condition,loopContext=node,functionContext=functionContext))
             if res.error:
                 return res
-            if not condition_val or node.isStop:
+            if not condition_val:
                 break
             res.register(self.visit(node.body,loopContext=node,functionContext=functionContext))
             if res.error:
                 return res
+            if node.isStop:
+                break
+            if node.isContinue:
+                node.isContinue=False
+            if functionContext is not None and functionContext.isReturn:
+                return res.success(True)
+        return res.success(True)
+    
+    def visitRepeatNode(self,node,functionContext=None,**kwargs):
+        res=ASResult()
+        condition_val=res.register(self.visit(node.condition,loopContext=node,functionContext=functionContext))
+        if res.error:
+            return res
+        if type(condition_val).__name__ in ("int","float"):
+            condition_val=int(condition_val)
+        else:
+            return res.failure(f"Condition must be of type 'INT'")
+        if condition_val<0:
+            return res.failure(f"Condition must be greater than zero")
+        for _ in range(condition_val):
+            res.register(self.visit(node.body,loopContext=node,functionContext=functionContext))
+            if res.error:
+                return res
+            if node.isStop:
+                break
+            if node.isContinue:
+                node.isContinue=False
             if functionContext is not None and functionContext.isReturn:
                 return res.success(True)
         return res.success(True)
@@ -186,6 +213,13 @@ class Interpreter():
         if loopContext is None:
             return res.failure("encountered 'stop' statement outside loop")
         loopContext.isStop=True
+        return res.success(None)
+    
+    def visitContinueNode(self,node,loopContext=None,**kwargs):
+        res= ASResult()
+        if loopContext is None:
+            return res.failure("encountered 'continue' statement outside loop")
+        loopContext.isContinue=True
         return res.success(None)
 
     def visitReturnNode(self,node,functionContext=None,**kwargs):

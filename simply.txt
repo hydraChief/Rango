@@ -16,8 +16,15 @@ if false {
 c is c+1;
 show(c);
 i is 5;
-till i gt 0 {
-    show(i);
+repeat (2*3+5*(1)) times {
     i is i-1;
-}
+    show("inside repeat loop");
+    if i eq 3{
+        continue;
+    }
+    show("after continue");
 
+    if i eq 0{
+        stop;
+    }
+}

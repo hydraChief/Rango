@@ -70,9 +70,10 @@ class TillNode:
 class RepeatNode:
     def __init__(self,condition,body):
         self.value="repeat"
-        self.conditon=condition
+        self.condition=condition
         self.body=body
         self.isContinue=False
+        self.isStop=False
         self.symbolTable=SymbolTable()
 
 class StopNode:

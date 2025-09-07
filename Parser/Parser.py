@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode
+from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode
 from ErrorHandler import ParserResult
 from Tokenizer import TokenTypes, tokenGenerator, KEYWORDS
 from Logger import get_logger
@@ -370,7 +370,24 @@ class Parser:
         return res.success(ConditionalNode(value=value,condition=condition_node,body=body,elseIfBlockNodes=elseIfBlockNodes))
     
     def repeatStatement(self):
-        pass
+        res = ParserResult()
+        res.register_advance()
+        self.advance()
+
+        if self.current_token is None:
+            return res.failure("Expected Condition Expression")
+        
+        condition_node=res.register(self.condExpression())
+        if res.error:
+            return res
+        if self.current_token is not None and self.current_token.type != TokenTypes["TT_TIMESITITERATOR"]:
+            return res.failure(f"Expected '{TokenTypes['TT_TIMESITITERATOR']}'")
+        res.register_advance()
+        self.advance()
+        body=res.register(self.parseBlock())
+        if res.error:
+            return res
+        return res.success(RepeatNode(condition=condition_node,body=body))
 
     def tillStatement(self):
         res = ParserResult()
@@ -398,6 +415,17 @@ class Parser:
         res.register_advance()
         self.advance()
         return res.success(StopNode())
+    
+    def continueStatement(self):
+        res=ParserResult()
+        res.register_advance()
+        self.advance()
+        if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
+            return res.failure("Expected ';'")
+        res.register_advance()
+        self.advance()
+        return res.success(ContinueNode())
+    
     def statement(self):
         res=ParserResult()
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"]:
@@ -424,7 +452,10 @@ class Parser:
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_ITERATOR"]:
             self.logger.info(f"parsing '{self.current_token.value}'")
             if self.current_token.value=="repeat":
-                pass
+                node=res.register(self.repeatStatement())
+                if res.error:
+                    return res
+                return res.success(node)
             elif self.current_token.value=="till":
                 node=res.register(self.tillStatement())
                 if res.error:
@@ -434,6 +465,11 @@ class Parser:
                 return res.failure(f"Invalid KEYWORD, '{self.current_token.value}'")
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_STOPITERATOR"]:
             node=res.register(self.stopStatement())
+            if res.error:
+                return res
+            return res.success(node)
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_CONTINUEITERATOR"]:
+            node=res.register(self.continueStatement())
             if res.error:
                 return res
             return res.success(node)
