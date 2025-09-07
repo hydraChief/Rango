@@ -87,6 +87,7 @@ class ContinueNode:
 class ReturnNode:
     def __init__(self,value):
         self.value=value
+        self.returnValue=None
 
 class FunctionNode:
     def __init__(self,value,params,body):

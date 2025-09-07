@@ -23,4 +23,7 @@ class SymbolTable:
 
     def present(self,name):
         return name in self.symbols
+    
+    def presentInScopeChain(self,name):
+        return (name in self.symbols) or (self.parent and self.parent.presentInScopeChain(name))
 
