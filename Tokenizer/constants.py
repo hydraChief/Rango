@@ -1,5 +1,6 @@
 
 TokenTypes={
+    'TT_NIL': 'NIL',
     'TT_INT': 'INT',
     'TT_FLOAT': 'FLOAT',  
     'TT_PLUS': 'PLUS',
@@ -21,11 +22,15 @@ TokenTypes={
     'TT_CONDITIONAL':'CONDITIONAL',
     'TT_CONDITIONALOP':'CONDITIONALOP',
     'TT_LOGICALOP':'LOGICALOP',
+    'TT_ITERATOR':'ITERATOR',
+    'TT_MEMBERSHIPOP':'MEMBERSHIPOP',
+    'TT_STOPITERATOR':'STOPITERATOR'
 }
 Digits='0123456789'
 Letters='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 Letter_Digits=Letters+Digits
 KEYWORDS={
+    'nil':'TT_NIL',
     'show':'TT_KEYWORD',
     'is':'TT_KEYWORD',
     'false':'TT_BOOL',
@@ -40,5 +45,9 @@ KEYWORDS={
     'or':'TT_LOGICALOP',
     'if':'TT_CONDITIONAL',
     'else_if':'TT_CONDITIONAL',
-    'else':'TT_CONDITIONAL'
+    'else':'TT_CONDITIONAL',
+    'till':'TT_ITERATOR',
+    'repeat':'TT_ITERATOR',
+    'in':'TT_MEMBERSHIPOP',
+    'stop':'TT_STOPITERATOR'
 }

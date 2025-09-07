@@ -13,6 +13,11 @@ if false {
     show("else block");
     show(1234344);
 }
+c is c+1;
 show(c);
+i is 5;
+till i gt 0 {
+    show(i);
+    i is i-1;
+}
 
-//variable scoping has to thinked of and loops and function and return -->version 1

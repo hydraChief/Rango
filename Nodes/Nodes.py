@@ -1,3 +1,5 @@
+from SymbolTable import SymbolTable
+
 class BinaryNode:
     def __init__(self,left=None,op=None,right=None):
         self.type="BN"
@@ -54,3 +56,41 @@ class ConditionalNode:
         self.condition=condition
         self.body=body
         self.elseIfBlockNodes=elseIfBlockNodes
+        self.symbolTable=SymbolTable()
+
+class TillNode:
+    def __init__(self,condition,body):
+        self.value="till"
+        self.condition=condition
+        self.body=body
+        self.isContinue=False
+        self.isStop=False
+        self.symbolTable=SymbolTable()
+
+class RepeatNode:
+    def __init__(self,condition,body):
+        self.value="repeat"
+        self.conditon=condition
+        self.body=body
+        self.isContinue=False
+        self.symbolTable=SymbolTable()
+
+class StopNode:
+    def __init__(self):
+        self.value="stop"
+
+class ContinueNode:
+    def __init__(self):
+        self.value="continue"
+
+class ReturnNode:
+    def __init__(self,value):
+        self.value=value
+
+class FunctionNode:
+    def __init__(self,value,params,body):
+        self.value=value
+        self.params=params
+        self.body=body
+        self.isReturn=False
+        self.symbolTable=SymbolTable()

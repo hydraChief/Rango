@@ -1,3 +1,3 @@
-from .Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode, BooleanNode, LogicalNode, ComparatorNode, ConditionalNode
+from .Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode, BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode
 
 __all__=['NumberNode','BinaryNode','StatementsNode','ShowNode', 'VariableNode', 'StringNode','VariableAccessNode','BooleanNode', 'LogicalNode', 'ComparatorNode']

@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode
+from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode
 from ErrorHandler import ParserResult
 from Tokenizer import TokenTypes, tokenGenerator, KEYWORDS
 from Logger import get_logger
@@ -368,6 +368,36 @@ class Parser:
                     break
         self.logger.info(f"{value} {condition_node.value} {type(body).__name__}")
         return res.success(ConditionalNode(value=value,condition=condition_node,body=body,elseIfBlockNodes=elseIfBlockNodes))
+    
+    def repeatStatement(self):
+        pass
+
+    def tillStatement(self):
+        res = ParserResult()
+        res.register_advance()
+        self.advance()
+
+        if self.current_token is None:
+            return res.failure("Expected Condition Expression")
+        
+        condition_node=res.register(self.condExpression())
+        if res.error:
+            return res
+
+        body=res.register(self.parseBlock())
+        if res.error:
+            return res
+        return res.success(TillNode(condition=condition_node,body=body))
+    
+    def stopStatement(self):
+        res=ParserResult()
+        res.register_advance()
+        self.advance()
+        if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
+            return res.failure("Expected ';'")
+        res.register_advance()
+        self.advance()
+        return res.success(StopNode())
     def statement(self):
         res=ParserResult()
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"]:
@@ -390,7 +420,23 @@ class Parser:
             if res.error:
                 return res
             return res.success(node)
-        print(self.current_token.value)
+        
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_ITERATOR"]:
+            self.logger.info(f"parsing '{self.current_token.value}'")
+            if self.current_token.value=="repeat":
+                pass
+            elif self.current_token.value=="till":
+                node=res.register(self.tillStatement())
+                if res.error:
+                    return res
+                return res.success(node)
+            else:
+                return res.failure(f"Invalid KEYWORD, '{self.current_token.value}'")
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_STOPITERATOR"]:
+            node=res.register(self.stopStatement())
+            if res.error:
+                return res
+            return res.success(node)
         return res.failure("Invalid Syntax")
     def generate(self):
         return self.expression()
