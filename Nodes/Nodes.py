@@ -101,3 +101,12 @@ class FunctionCallNode:
         self.returnValue=None
         self.isReturn=False
         self.symbolTable=SymbolTable()
+
+class ReturnNode:
+    def __init__(self,returnNode=None):
+        self.value="return"
+        self.returnNode=returnNode
+
+class NoneNode:
+    def __init__(self):
+        self.value="none"

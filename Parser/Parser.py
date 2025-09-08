@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode, FunctionDefinitionNode, FunctionCallNode
+from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode, FunctionDefinitionNode, FunctionCallNode, ReturnNode, NoneNode
 from ErrorHandler import ParserResult
 from Tokenizer import TokenTypes, tokenGenerator, KEYWORDS
 from Logger import get_logger
@@ -181,7 +181,12 @@ class Parser:
         token=self.current_token
         # if expression_meta_data["prev_token_type"] is not None and expression_meta_data["prev_token_type"] != self.current_token.type and self.current_token.type not in (TokenTypes["TT_IDENTIFIER"],TokenTypes["TT_LP"]):
         #     return res.failure(f"Can't use differnet Literals, '{expression_meta_data['prev_token_type']}' '{self.current_token.type}'")
-
+        if token is not None and token.type==TokenTypes["TT_IDENTIFIER"] and (self.current_token_index+1<len(self.tokens) and self.tokens[self.current_token_index+1].type==TokenTypes["TT_LP"]):
+            node=res.register(self.functionCallStatement())
+            if res.error:
+                return res
+            return res.success(node)
+        
         if  token.type == TokenTypes['TT_IDENTIFIER']:
             res.register_advance()
             self.advance()
@@ -484,12 +489,8 @@ class Parser:
         if self.current_token is not None and self.current_token.type == TokenTypes["TT_RP"]:
             res.register_advance()
             self.advance()
-            if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
-                return res.failure("Expected ';'")
-            res.register_advance()
-            self.advance()
             return res.success(FunctionCallNode(value=name,args=args))
-        
+    
         if self.current_token is not None:
             arg=res.register(self.condExpression())
             if res.error:
@@ -509,11 +510,24 @@ class Parser:
             return res.failure("Expected ')'" )
         res.register_advance()
         self.advance()
+        return res.success(FunctionCallNode(value=name,args=args))
+
+    def returnStatement(self):
+        res=ParserResult()
+        res.register_advance()
+        self.advance()
+        if self.current_token is not None and self.current_token.type == TokenTypes["TT_TERMINATOR"]:
+            res.register_advance()
+            self.advance()
+            return res.success(ReturnNode(returnNode=NoneNode()))
+        node=res.register(self.condExpression())
+        if res.error:
+            return res
         if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
             return res.failure("Expected ';'")
         res.register_advance()
         self.advance()
-        return res.success(FunctionCallNode(value=name,args=args))
+        return res.success(ReturnNode(returnNode=node))
 
     def statement(self):
         res=ParserResult()
@@ -521,10 +535,20 @@ class Parser:
             node=res.register(self.functionCallStatement())
             if res.error:
                 return res
+            if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
+                return res.failure("Expected ';'")
+            res.register_advance()
+            self.advance()
             return res.success(node)
         
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_FUNCTIONDEFINITION"]:
             node=res.register(self.functionDefinitionStatement())
+            if res.error:
+                return res
+            return res.success(node)
+
+        if self.current_token is not None and self.current_token.type== TokenTypes["TT_FUNCTIONRETURN"] and self.current_token.value=="return":
+            node=res.register(self.returnStatement())
             if res.error:
                 return res
             return res.success(node)
@@ -564,11 +588,13 @@ class Parser:
                 return res.success(node)
             else:
                 return res.failure(f"Invalid KEYWORD, '{self.current_token.value}'")
+            
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_STOPITERATOR"]:
             node=res.register(self.stopStatement())
             if res.error:
                 return res
             return res.success(node)
+        
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_CONTINUEITERATOR"]:
             node=res.register(self.continueStatement())
             if res.error:

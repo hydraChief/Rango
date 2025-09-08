@@ -228,6 +228,10 @@ class Interpreter():
         loopContext.isContinue=True
         return res.success(None)
 
+    def visitNoneNode(self,node,**kwargs):
+        res= ASResult()
+        return res.success(None)
+
     def visitFunctionCallNode(self,node,parentSymbolTable,loopContext=None,**kwargs):
         res= ASResult()
         node.symbolTable.parent=parentSymbolTable
@@ -261,7 +265,7 @@ class Interpreter():
         if functionContext is None:
             return res.failure("encountered 'return' statement outside a function")
         functionContext.isReturn=True
-        functionContext.returnValue=res.register(self.visit(node.returnValue,parentSymbolTable=parentSymbolTable))
+        functionContext.returnValue=res.register(self.visit(node.returnNode,parentSymbolTable=parentSymbolTable))
         if res.error:
             return res
         return res.success(None)

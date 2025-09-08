@@ -1,6 +1,8 @@
 does x(par1,par2){
     show(par1,par2);
+    return ;
 }
 show("calling function");
-x(1,2);
+a is x(1,2);
+show(a);
 
