@@ -40,13 +40,25 @@ class SymbolTable:
     def set(self,name,value='nil',type='nil',parentSymbolTable=None,isInstance=False):
         if self.functionPresentInScopeChain(name):
             raise Exception(f"Cannot assign to function '{name}'")
-        self.symbols[name]={"type":type,"value":value}
-        if parentSymbolTable and type=='function':
-            self.symbols[name]["parentSymbolTable"]=parentSymbolTable
-        self.symbols[name]["isInstance"]=False
-        if isInstance:
-            self.symbols[name]["isInstance"]=True
-        return self.symbols[name]
+        if self.presentInScopeChain(name):
+            if self.present(name):
+                self.symbols[name]={"type":type,"value":value}
+                if parentSymbolTable and type=='function':
+                    self.symbols[name]["parentSymbolTable"]=parentSymbolTable
+                self.symbols[name]["isInstance"]=False
+                if isInstance:
+                    self.symbols[name]["isInstance"]=True
+                return self.symbols[name]
+            else:
+                return self.parent.set(name,value=value,type=type,parentSymbolTable=parentSymbolTable,isInstance=isInstance)
+        else:
+            self.symbols[name]={"type":type,"value":value}
+            if parentSymbolTable and type=='function':
+                self.symbols[name]["parentSymbolTable"]=parentSymbolTable
+            self.symbols[name]["isInstance"]=False
+            if isInstance:
+                self.symbols[name]["isInstance"]=True
+            return self.symbols[name]
 
 
     def get(self,name):

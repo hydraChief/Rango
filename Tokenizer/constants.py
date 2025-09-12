@@ -34,6 +34,7 @@ TokenTypes={
     'TT_OBJECTPOINTER':'OBJECTPOINTER',
     'TT_CLASS':'CLASS',
     'TT_COMMENT':'COMMENT',
+    'TT_ATTRIBUTEACCESSOR':'->',
 }
 Digits='0123456789'
 Letters='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'

@@ -126,17 +126,27 @@ class AccessMethodNode:
         self.instanceName=instanceName
         self.methodName=methodName
         self.args=args
+        self.returnValue=None
+        self.isReturn=False
+        self.symbolTable=SymbolTable()
 
-class AccessInstanceVariableNode:
-    def __init__(self,instanceName,variableName):
-        self.instanceName=instanceName
-        self.variableName=variableName
+# class AccessInstanceVariableNode:
+#     def __init__(self,instanceName,variable_token_name):
+#         self.instanceName=instanceName
+#         self.variable_token_name=variable_token_name
 
 class AccessItSelfVariableNode:
-    def __init__(self,variableName):
-        self.variableName=variableName
+    def __init__(self,variable_token_name):
+        self.variable_token_name=variable_token_name
 
 class AccessItSelfMethodNode:
     def __init__(self,methodName,args=[]):
         self.methodName=methodName
         self.args=args
+        self.returnValue=None
+        self.isReturn=False
+        self.symbolTable=SymbolTable()
+class InstanceVariableAssignmentNode:
+    def __init__(self,variable_token_name,variable_node):
+        self.variable_token_name=variable_token_name
+        self.variable_token=variable_node

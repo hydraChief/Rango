@@ -35,4 +35,25 @@ class ClassSymbolTable(SymbolTable):
         
         raise Exception(f"Variable '{name}' not defined")
         
-   
+    def setInInstance(self,name,value,type,parentSymbolTable,isInstance=True):
+        if self.functionPresentInInheritedScopeChain(name):
+            raise Exception(f"Cannot assign to function '{name}'")
+        if self.presentInInheritedScopeChain(name):
+            if self.present(name):
+                self.symbols[name]={"type":type,"value":value}
+                if parentSymbolTable and type=='function':
+                    self.symbols[name]["parentSymbolTable"]=parentSymbolTable
+                self.symbols[name]["isInstance"]=False
+                if isInstance:
+                    self.symbols[name]["isInstance"]=True
+                return self.symbols[name]
+            else:
+                return self.parent.setInInstance(name,value=value,type=type,parentSymbolTable=parentSymbolTable,isInstance=isInstance)
+        else:
+            self.symbols[name]={"type":type,"value":value}
+            if parentSymbolTable and type=='function':
+                self.symbols[name]["parentSymbolTable"]=parentSymbolTable
+            self.symbols[name]["isInstance"]=False
+            if isInstance:
+                self.symbols[name]["isInstance"]=True
+            return self.symbols[name]

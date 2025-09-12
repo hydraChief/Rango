@@ -6,8 +6,6 @@ does y(x1){
     show("inside y");
     return x1;
 }
-show("calling function");
-x(6,8);
 a is y(x);
 show(a(6,8));
 class Y{
@@ -16,8 +14,11 @@ class Y{
     does y(){
         show("innside class Y");
     }
-    y();
+    a is y(3);
+    itSelf y();
+    show("checking inside y",itSelf y());
 }
-create Y;
+create Y; note: here we created an object.
+show(a);
 
-note comments and self method calling vs global scope function calling and object method calling.
+note: itself Variable assignment and accessing || object method calling.
