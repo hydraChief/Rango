@@ -19,6 +19,7 @@ TokenTypes={
     'TT_BOOL':'BOOL',
     'TT_TERMINATOR':';',
     'TT_SEPERATOR':',',
+    'TT_END':'.',
     'TT_CONDITIONAL':'CONDITIONAL',
     'TT_CONDITIONALOP':'CONDITIONALOP',
     'TT_LOGICALOP':'LOGICALOP',
@@ -32,6 +33,7 @@ TokenTypes={
     'TT_NEWOBJECT':'NEWOBJECT',
     'TT_OBJECTPOINTER':'OBJECTPOINTER',
     'TT_CLASS':'CLASS',
+    'TT_COMMENT':'COMMENT',
 }
 Digits='0123456789'
 Letters='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -64,4 +66,5 @@ KEYWORDS={
     'class':'TT_CLASS',
     'itSelf':'TT_OBJECTPOINTER',
     'create':'TT_NEWOBJECT',
+    'note':'TT_COMMENT',
 }

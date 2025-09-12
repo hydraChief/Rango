@@ -50,6 +50,9 @@ class Lexer:
             elif char == ';':
                 tokens.append(Token(TokenTypes['TT_TERMINATOR'], value=';',start=self.pos.copy()))
                 self.advance()
+            elif char == '.':
+                tokens.append(Token(TokenTypes['TT_END'], value='.',start=self.pos.copy()))
+                self.advance()
             elif char == ',':
                 tokens.append(Token(TokenTypes['TT_SEPERATOR'], value=',',start=self.pos.copy()))
                 self.advance()

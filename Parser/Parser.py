@@ -532,6 +532,18 @@ class Parser:
     def statement(self):
         res=ParserResult()
         
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_COMMENT"]:
+            res.register_advance()
+            self.advance()
+            while self.current_token is not None and self.current_token.type!=TokenTypes["TT_END"]:
+                res.register_advance()
+                self.advance()
+            if self.current_token is None or self.current_token.type != TokenTypes["TT_END"]:
+                return res.failure("Expected '.'")
+            res.register_advance()
+            self.advance()
+            return res.success(NoneNode())
+
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_CLASS"]:
             res.register_advance()
             self.advance()

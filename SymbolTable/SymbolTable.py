@@ -14,10 +14,11 @@ class SymbolTable:
         return (name in self.functions) or (self.parent and self.parent.functionPresentInScopeChain(name))
 
     def addFunction(self,name,body,params={}):
-        if self.functionPresentInScopeChain(name):
-            raise Exception("Function already exists")
-        else:
-            self.functions[name]={"type":"function","value":{"params":params,"body":body},"parentSymbolTable":self,"isInstance":False}
+        # if self.functionPresentInScopeChain(name):
+        #     raise Exception("Function already exists")
+        # else:
+        #     self.functions[name]={"type":"function","value":{"params":params,"body":body},"parentSymbolTable":self,"isInstance":False}
+        self.functions[name]={"type":"function","value":{"params":params,"body":body},"parentSymbolTable":self,"isInstance":False}
 
     def getFunctionDefinition(self,name):
         if self.functionPresent(name):

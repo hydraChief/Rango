@@ -13,14 +13,11 @@ show(a(6,8));
 class Y{
     var is 10;
     show(var);
-    does Y(){
+    does y(){
         show("innside class Y");
     }
-    Y();
+    y();
 }
 create Y;
 
-
-comments
-method access
-mine keyword
+note comments and self method calling vs global scope function calling and object method calling.
