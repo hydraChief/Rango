@@ -1,4 +1,4 @@
-from SymbolTable import SymbolTable
+from SymbolTable import SymbolTable, ClassSymbolTable
 
 class BinaryNode:
     def __init__(self,left=None,op=None,right=None):
@@ -110,3 +110,33 @@ class ReturnNode:
 class NoneNode:
     def __init__(self):
         self.value="none"
+
+class ClassDefinitionNode:
+    def __init__(self,value,body):
+        self.classBody=body
+        self.value=value
+
+class InstanceCreationNode:
+    def __init__(self,value):
+        self.value=value
+        self.symbolTable=ClassSymbolTable()
+
+class AccessMethodNode:
+    def __init__(self,instanceName,methodName,args=[]):
+        self.instanceName=instanceName
+        self.methodName=methodName
+        self.args=args
+
+class AccessInstanceVariableNode:
+    def __init__(self,instanceName,variableName):
+        self.instanceName=instanceName
+        self.variableName=variableName
+
+class AccessItSelfVariableNode:
+    def __init__(self,variableName):
+        self.variableName=variableName
+
+class AccessItSelfMethodNode:
+    def __init__(self,methodName,args=[]):
+        self.methodName=methodName
+        self.args=args

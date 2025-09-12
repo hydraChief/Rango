@@ -25,11 +25,11 @@ class Interpreter():
             return "nil"
         else:
             return "function"
-    def visitStatementsNode(self,node,loopContext=None,functionContext=None,parentSymbolTable=None):
+    def visitStatementsNode(self,node,loopContext=None,functionContext=None,parentSymbolTable=None,classContext=None):
         res=ASResult()
         value=[]
         for stmnt in node.statements:
-            vl=res.register(self.visit(stmnt,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=parentSymbolTable))
+            vl=res.register(self.visit(stmnt,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=parentSymbolTable,classContext=classContext))
             if res.error:
                 return res
             if loopContext is not None and (loopContext.isStop or loopContext.isContinue):
@@ -297,17 +297,32 @@ class Interpreter():
             return res
         return res.success({"value":"nil","type":"nil"})
 
-    def visit(self,node,loopContext=None,functionContext=None,parentSymbolTable=None):
+    def visitClassDefinitionNode(self,node,parentSymbolTable,**kwargs):
+        res=ASResult()
+        if parentSymbolTable.isGlobalScope:
+            parentSymbolTable.addClassDefinition(node.value,body=node.classBody)
+            return res.success(parentSymbolTable.getClassDefinition(node.value))
+        return res.failure("Encountered Class Definition In Local Scope")
+
+    def visitInstanceCreationNode(self,node,parentSymbolTable,**kwargs):
+        res=ASResult()
+        clsDefn = parentSymbolTable.getClassDefinition(node.value)
+        node.symbolTable.parent=clsDefn["parentSymbolTable"]
+        res.register(self.visit(clsDefn["value"]["body"],loopContext=None,functionContext=None,classContext=node,parentSymbolTable=node.symbolTable))
+        if res.error:
+            return res
+        return res.success({"value":{"symbolTable":node.symbolTable},"type":node.value,"isInstance":True,"parentSymbolTable":node.symbolTable.parent})
+    def visit(self,node,loopContext=None,functionContext=None,parentSymbolTable=None,classContext=None):
         method_name=f"visit{type(node).__name__}"
         method=getattr(self,method_name,self.noVisit)
-        return method(node,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=parentSymbolTable)
+        return method(node,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=parentSymbolTable,classContext=classContext)
     
     
 def run(filename):
     logger = get_logger()
     logger.info(f"Starting Rango interpreter execution", filename=filename)
     
-    symbol_table = SymbolTable()
+    symbol_table = SymbolTable(isGlobalScope=True)
     interpreter = Interpreter()
     
     logger.info("Calling parser...")

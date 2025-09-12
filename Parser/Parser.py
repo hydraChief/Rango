@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode, FunctionDefinitionNode, FunctionCallNode, ReturnNode, NoneNode
+from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode, FunctionDefinitionNode, FunctionCallNode, ReturnNode, NoneNode, AccessItSelfMethodNode, AccessItSelfVariableNode, AccessInstanceVariableNode, AccessMethodNode, InstanceCreationNode, ClassDefinitionNode
 from ErrorHandler import ParserResult
 from Tokenizer import TokenTypes, tokenGenerator, KEYWORDS
 from Logger import get_logger
@@ -453,7 +453,7 @@ class Parser:
             body=res.register(self.parseBlock())
             if res.error:
                 return res
-            return res.success(FunctionDefinitionNode(name=name,params=params,body=body))
+            return res.success(FunctionDefinitionNode(value=name,params=params,body=body))
         if self.current_token is not None and self.current_token.type == TokenTypes["TT_IDENTIFIER"]:
             params.append(self.current_token.value)
             res.register_advance()
@@ -531,6 +531,32 @@ class Parser:
 
     def statement(self):
         res=ParserResult()
+        
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_CLASS"]:
+            res.register_advance()
+            self.advance()
+            className=self.current_token.value
+            res.register_advance()
+            self.advance()
+            body=res.register(self.parseBlock())
+            if res.error:
+                return res
+            return res.success(ClassDefinitionNode(value=className,body=body))
+
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_NEWOBJECT"]:
+            res.register_advance()
+            self.advance()
+            if self.current_token is None or self.current_token.type!=TokenTypes["TT_IDENTIFIER"]:
+                return res.failure("Expected Class Name")
+            name=self.current_token.value
+            res.register_advance()
+            self.advance()
+            if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
+                return res.failure("Expected ';'")
+            res.register_advance()
+            self.advance()
+            return res.success(InstanceCreationNode(value=name))
+
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"] and (self.current_token_index+1<len(self.tokens) and self.tokens[self.current_token_index+1].type==TokenTypes["TT_LP"]):
             node=res.register(self.functionCallStatement())
             if res.error:
