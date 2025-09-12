@@ -12,6 +12,19 @@ class Interpreter():
         self.symbolTable=SymbolTable()
         self.logger = get_logger()
 
+    def typeOfValue(self,val):
+        if isinstance(val,bool):
+            return "bool"
+        elif isinstance(val,int):
+            return "int"
+        elif isinstance(val,float):
+            return "float"
+        elif isinstance(val,str):
+            return "string"
+        elif val is None or val is "nil":
+            return "nil"
+        else:
+            return "function"
     def visitStatementsNode(self,node,loopContext=None,functionContext=None,parentSymbolTable=None):
         res=ASResult()
         value=[]
@@ -36,68 +49,82 @@ class Interpreter():
         if res.error:
             return res
         ans=None
+        
+        if right["type"] in ("nil","function") or left["type"] in ("nil","function"):
+            return res.failure(f"Binary operation failed: {left['type']} {node.op.type} {right['type']}")
         try:
-            if(node.op.type==TokenTypes['TT_PLUS']):
-                ans= left+right
-            elif(node.op.type==TokenTypes['TT_MINUS']):
-                ans= left-right
-            elif(node.op.type==TokenTypes['TT_MUL']):
-                ans= left*right
-            elif(node.op.type==TokenTypes['TT_DIV']):
-                ans= left/right
-            self.logger.log_binary_operation(left, node.op.type, right, ans)
-            res.success(ans)
+            if(node.op.type==TokenTypes["TT_PLUS"]):
+                ans= left["value"]+right["value"]
+            elif(node.op.type==TokenTypes["TT_MINUS"]):
+                ans= left["value"]-right["value"]
+            elif(node.op.type==TokenTypes["TT_MUL"]):
+                ans= left["value"]*right["value"]
+            elif(node.op.type==TokenTypes["TT_DIV"]):
+                ans= left["value"]/right["value"]
+            self.logger.log_binary_operation(left["value"], node.op.type, right["value"], ans)
+            result={"type":self.typeOfValue(ans),"value":ans}
+            res.success(result)
         except Exception as e:
-            self.logger.error(f"Binary operation failed", left=str(left), operator=node.op.type, right=str(right), error=str(e))
-            res.failure(e)
+            self.logger.error(f"Binary operation failed", left=left["type"], operator=node.op.type, right=right["type"], error=str(e))
+            res.failure(f"Binary operation failed: {left['type']} {node.op.type} {right['type']}")
         finally:
             return res
 
     def visitNumberNode(self,node,**kwargs):
         res=ASResult()
-        return res.success(node.value)
+        result={
+            "type":self.typeOfValue(node.value),
+            "value":node.value
+        }
+        return res.success(result)
     
     def visitBooleanNode(self,node,**kwargs):
         res=ASResult()
-        return res.success(node.value)
-
+        result={
+            "type":self.typeOfValue(node.value),
+            "value":node.value
+        }
+        return res.success(result)
     def visitStringNode(self,node,**kwargs):
         res=ASResult()
-        return res.success(node.value)
+        result={
+            "type":self.typeOfValue(node.value),
+            "value":node.value
+        }
+        return res.success(result)
     
     def visitShowNode(self,node,parentSymbolTable,**kwargs):
         res=ASResult()
         values = []
         for exp in node.body:
-            val=res.register(self.visit(exp,parentSymbolTable=parentSymbolTable))
+            valDict=res.register(self.visit(exp,parentSymbolTable=parentSymbolTable))
             if res.error:
                 return res
-            values.append(val)
+            values.append(valDict['value'])
         if len(values):
             print(*values)
         else:
             print()
         self.logger.log_show_statement(values)
-        return res.success(node.body)
+        return res.success({"value":"nil","type":"nil"})
         
     def visitVariableNode(self,node,parentSymbolTable,**kwargs):
         res=ASResult()
         exp_ans=res.register(self.visit(node.variable_node,parentSymbolTable=parentSymbolTable))
         if not res.error:
-            parentSymbolTable.set(node.variable_token_name,exp_ans)
+            parentSymbolTable.set(node.variable_token_name,value=exp_ans["value"],type=exp_ans["type"],parentSymbolTable=parentSymbolTable)
             self.logger.log_variable_assignment(node.variable_token_name, exp_ans)
             return res.success(exp_ans)
         return res.failure(res.error)
 
     def visitVariableAccessNode(self,node,parentSymbolTable=None,**kwargs):
         res=ASResult()
-        if parentSymbolTable.presentInScopeChain(node.variable_token_name):
-            value = parentSymbolTable.get(node.variable_token_name)
-            self.logger.log_variable_access(node.variable_token_name, value)
-            return res.success(value)
-        error_msg = f"Variable '{node.variable_token_name}' is not defined"
-        self.logger.error(error_msg)
-        return res.failure(error_msg)
+        valueDict = parentSymbolTable.get(node.variable_token_name)
+        self.logger.log_variable_access(node.variable_token_name, valueDict["value"])
+        return res.success(valueDict)
+        # error_msg = f"Variable '{node.variable_token_name}' is not defined"
+        # self.logger.error(error_msg)
+        # return res.failure(error_msg)
 
     def noVisit(self,node,**kwargs):
         res=ASResult()
@@ -106,22 +133,22 @@ class Interpreter():
     def visitConditionalNode(self,node,loopContext=None,functionContext=None,parentSymbolTable=None):
         res= ASResult()
         node.symbolTable.parent=parentSymbolTable
-        val= res.register(self.visit(node.condition,parentSymbolTable=node.symbolTable))
+        valueDict= res.register(self.visit(node.condition,parentSymbolTable=node.symbolTable))
         if res.error:
             return res
-        if val:
+        if valueDict["value"]:
             res.register(self.visit(node.body,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=node.symbolTable))
             if res.error:
                 return res
-            return res.success(True)
+            return res.success({"value":True,"type":"bool"})
         else:
             for block in node.elseIfBlockNodes:
-                block_condition = res.register(self.visit(block,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=node.symbolTable))
+                valueDict = res.register(self.visit(block,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=node.symbolTable))
                 if res.error:
                     return res
-                if block_condition:
-                    return res.success(True)
-        return res.success(val)
+                if valueDict["value"]:
+                    return res.success({"value":True,"type":"bool"})
+        return res.success(valueDict)
 
     def visitLogicalNode(self,node,parentSymbolTable,**kwargs):
         res=ASResult()
@@ -133,15 +160,15 @@ class Interpreter():
             return res
         ans=None
         try:
-            if(node.value=='and'):
-                ans=left and right
-            elif(node.value=='or'):
-                ans=left or right
+            if(node.value=="and"):
+                ans=left["value"] and right["value"]
+            elif(node.value=="or"):
+                ans=left["value"] or right["value"]
             else:
                return  res.failure(f"Unexpected Operator encountered '{node.value}'")
         except Exception as e:
             return res.failure("Error while performing Logical Operation")
-        return res.success(ans)
+        return res.success({"value":ans,"type":self.typeOfValue(ans)})
 
     def visitComparatorNode(self,node,parentSymbolTable,**kwargs):
         res=ASResult()
@@ -153,23 +180,23 @@ class Interpreter():
             return res
         ans=False
         try:
-            if(node.value=='gt'):
-                ans=left > right
-            elif(node.value=='gteq'):
-                ans=left >= right
-            elif(node.value=='lt'):
-                ans=left < right
-            elif(node.value=='lteq'):
-                ans=left <= right
-            elif(node.value=='eq'):
-                ans=left == right
-            elif(node.value=='noteq'):
-                ans=left != right
+            if(node.value=="gt"):
+                ans=left["value"] > right["value"]
+            elif(node.value=="gteq"):
+                ans=left["value"] >= right["value"]
+            elif(node.value=="lt"):
+                ans=left["value"] < right["value"]
+            elif(node.value=="lteq"):
+                ans=left["value"] <= right["value"]
+            elif(node.value=="eq"):
+                ans=left["value"] == right["value"]
+            elif(node.value=="noteq"):
+                ans=left["value"] != right["value"]
             else:
                return  res.failure(f"Unexpected Operator encountered '{node.value}'")
         except Exception as e:
             return res.failure("Error while performing Relational Operation")
-        return res.success(ans)
+        return res.success({"value":ans,"type":"bool"})
 
     def visitTillNode(self,node,functionContext=None,parentSymbolTable=None,**kwargs):
         res=ASResult()
@@ -178,7 +205,7 @@ class Interpreter():
             condition_val=res.register(self.visit(node.condition,loopContext=node,functionContext=functionContext,parentSymbolTable=node.symbolTable))
             if res.error:
                 return res
-            if not condition_val:
+            if not condition_val["value"]:
                 break
             res.register(self.visit(node.body,loopContext=node,functionContext=functionContext,parentSymbolTable=node.symbolTable))
             if res.error:
@@ -188,8 +215,8 @@ class Interpreter():
             if node.isContinue:
                 node.isContinue=False
             if functionContext is not None and functionContext.isReturn:
-                return res.success(True)
-        return res.success(True)
+                return res.success({"value":True,"type":"bool"})
+        return res.success({"value":True,"type":"bool"})
     
     def visitRepeatNode(self,node,functionContext=None,parentSymbolTable=None,**kwargs):
         res=ASResult()
@@ -197,13 +224,13 @@ class Interpreter():
         condition_val=res.register(self.visit(node.condition,loopContext=node,functionContext=functionContext,parentSymbolTable=node.symbolTable))
         if res.error:
             return res
-        if type(condition_val).__name__ in ("int","float"):
-            condition_val=int(condition_val)
+        if condition_val["type"] in ("int","float"):
+            condition_val["value"]=int(condition_val["value"])
         else:
             return res.failure(f"Condition must be of type 'INT'")
-        if condition_val<0:
+        if condition_val["value"]<0:
             return res.failure(f"Condition must be greater than zero")
-        for _ in range(condition_val):
+        for _ in range(condition_val["value"]):
             res.register(self.visit(node.body,loopContext=node,functionContext=functionContext,parentSymbolTable=node.symbolTable))
             if res.error:
                 return res
@@ -212,51 +239,51 @@ class Interpreter():
             if node.isContinue:
                 node.isContinue=False
             if functionContext is not None and functionContext.isReturn:
-                return res.success(True)
-        return res.success(True)
+                return res.success({"value":True,"type":"bool"})
+        return res.success({"value":True,"type":"bool"})
     def visitStopNode(self,node,loopContext=None,**kwargs):
         res= ASResult()
         if loopContext is None:
             return res.failure("encountered 'stop' statement outside loop")
         loopContext.isStop=True
-        return res.success(None)
+        return res.success({"value":"nil","type":"nil"})
     
     def visitContinueNode(self,node,loopContext=None,**kwargs):
         res= ASResult()
         if loopContext is None:
             return res.failure("encountered 'continue' statement outside loop")
         loopContext.isContinue=True
-        return res.success(None)
+        return res.success({"value":"nil","type":"nil"})
 
     def visitNoneNode(self,node,**kwargs):
         res= ASResult()
-        return res.success(None)
+        return res.success({"value":"nil","type":"nil"})
 
     def visitFunctionCallNode(self,node,parentSymbolTable,loopContext=None,**kwargs):
         res= ASResult()
-        node.symbolTable.parent=parentSymbolTable
-        func=node.symbolTable.getFunctionDefinition(node.value)
-        if len(func["params"]) != len(node.args):
-            return res.failure(f"Expected {len(func['params'])} arguments but got {len(node.args)}")
+        func=parentSymbolTable.getFunctionDefinition(node.value) #this parentSymbolTable is for the scope when function is called
+        node.symbolTable.parent=func["parentSymbolTable"] #this parentSymbolTable is for the scope where function was declared
+        if len(func["value"]["params"]) != len(node.args):
+            return res.failure(f"Expected {len(func['value']['params'])} arguments but got {len(node.args)}")
         
-        for param,arg in zip(func["params"],node.args):
+        for param,arg in zip(func["value"]["params"],node.args):
             arg=res.register(self.visit(arg,parentSymbolTable=node.symbolTable))
             if res.error:
                 return res
-            node.symbolTable.addArgument(name=node.value,param=param,arg=arg)
+            node.symbolTable.addArgument(name=node.value,param=param,arg=arg["value"], arg_type=arg["type"])
             
-        res.register(self.visit(func["body"],loopContext=None,functionContext=node,parentSymbolTable=node.symbolTable))
+        res.register(self.visit(func["value"]["body"],loopContext=None,functionContext=node,parentSymbolTable=node.symbolTable))
         if res.error:
             return res
         if node.isReturn:
-            return res.success(node.returnValue)
-        return res.success(None)
+            return res.success({"value":node.returnValue["value"],"type":node.returnValue["type"]})
+        return res.success({"value":"nil","type":"nil"})
 
     def visitFunctionDefinitionNode(self,node,parentSymbolTable=None,**kwargs):
         res= ASResult()
         if parentSymbolTable:
             parentSymbolTable.addFunction(name=node.value,body=node.body,params=node.params)
-            return res.success(None)
+            return res.success({"value":"nil","type":"nil"})
         return res.failure("Encountered Function Definition Outside Global Scope")
         
 
@@ -268,7 +295,7 @@ class Interpreter():
         functionContext.returnValue=res.register(self.visit(node.returnNode,parentSymbolTable=parentSymbolTable))
         if res.error:
             return res
-        return res.success(None)
+        return res.success({"value":"nil","type":"nil"})
 
     def visit(self,node,loopContext=None,functionContext=None,parentSymbolTable=None):
         method_name=f"visit{type(node).__name__}"

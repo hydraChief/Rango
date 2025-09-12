@@ -1,8 +1,12 @@
 does x(par1,par2){
     show(par1,par2);
-    return ;
+    return par1+par2;
+}
+does y(x1){
+    show("inside y");
+    return x1;
 }
 show("calling function");
-a is x(1,2);
-show(a);
-
+x(6,8);
+a is y(x);
+show(a(6,8));
