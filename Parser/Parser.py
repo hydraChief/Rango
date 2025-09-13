@@ -191,9 +191,10 @@ class Parser:
                 return res.success(AccessItSelfMethodNode(methodName=methodData["value"],args=methodData["args"]))
             
             if  self.current_token.type == TokenTypes['TT_IDENTIFIER']:
+                variable_token_name=self.current_token.value
                 res.register_advance()
                 self.advance()
-                return res.success(AccessItSelfVariableNode(variable_token_name=token.value))
+                return res.success(AccessItSelfVariableNode(variable_token_name=variable_token_name))
             return res.failure("Expected 'Identifier'")
         if token is not None and token.type==TokenTypes["TT_IDENTIFIER"] and (self.current_token_index+1<len(self.tokens) and self.tokens[self.current_token_index+1].type==TokenTypes["TT_LP"]):
             node=res.register(self.functionCallStatement())

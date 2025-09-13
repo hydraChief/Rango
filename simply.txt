@@ -14,11 +14,9 @@ class Y{
     does y(){
         show("innside class Y");
     }
-    a is y(3);
-    itSelf y();
-    show("checking inside y",itSelf y());
+    itSelf a is itSelf y();
+    show("checking inside y", itSelf a);
 }
 create Y; note: here we created an object.
-show(a);
 
 note: itself Variable assignment and accessing || object method calling.

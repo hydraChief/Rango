@@ -111,11 +111,11 @@ class Interpreter():
     def visitVariableNode(self,node,parentSymbolTable,classContext=None,**kwargs):
         res=ASResult()
         exp_ans=res.register(self.visit(node.variable_node,parentSymbolTable=parentSymbolTable,classContext=classContext))
-        if not res.error:
-            parentSymbolTable.set(node.variable_token_name,value=exp_ans["value"],type=exp_ans["type"],parentSymbolTable=parentSymbolTable)
-            self.logger.log_variable_assignment(node.variable_token_name, exp_ans)
-            return res.success(exp_ans)
-        return res.failure(res.error)
+        if res.error:
+            return res
+        parentSymbolTable.set(node.variable_token_name,value=exp_ans["value"],type=exp_ans["type"],parentSymbolTable=parentSymbolTable)
+        self.logger.log_variable_assignment(node.variable_token_name, exp_ans)
+        return res.success(exp_ans)
 
     def visitVariableAccessNode(self,node,parentSymbolTable=None,**kwargs):
         res=ASResult()
@@ -338,6 +338,23 @@ class Interpreter():
         if node.isReturn:
             return res.success({"value":node.returnValue["value"],"type":node.returnValue["type"]})
         return res.success({"value":"nil","type":"nil"})
+
+    def visitAccessItSelfVariableNode(self,node,parentSymbolTable,classContext=None,**kwargs):
+        res=ASResult()
+        if classContext is None:
+            return res.failure("encountered 'itself' keyword outside a class instance")
+        valueDict = classContext.symbolTable.getFromInstanceOrInheritedOnly(node.variable_token_name)
+        self.logger.log_variable_access(node.variable_token_name, valueDict["value"])
+        return res.success(valueDict)
+
+    def visitInstanceVariableAssignmentNode(self,node,parentSymbolTable,classContext=None,**kwargs):
+        res=ASResult()
+        exp_ans=res.register(self.visit(node.variable_node,parentSymbolTable=parentSymbolTable,classContext=classContext))
+        if res.error:
+            return 
+        classContext.symbolTable.setInInstance(node.variable_token_name,value=exp_ans["value"],type=exp_ans["type"],parentSymbolTable=classContext.symbolTable)
+        self.logger.log_variable_assignment(node.variable_token_name, exp_ans)
+        return res.success(exp_ans)
     def visit(self,node,loopContext=None,functionContext=None,parentSymbolTable=None,classContext=None):
         method_name=f"visit{type(node).__name__}"
         method=getattr(self,method_name,self.noVisit)

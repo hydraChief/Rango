@@ -149,4 +149,4 @@ class AccessItSelfMethodNode:
 class InstanceVariableAssignmentNode:
     def __init__(self,variable_token_name,variable_node):
         self.variable_token_name=variable_token_name
-        self.variable_token=variable_node
+        self.variable_node=variable_node

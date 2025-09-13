@@ -70,11 +70,11 @@ class SymbolTable:
         
         if self.present(name):
             value=self.symbols[name]
+            return value
         elif self.parent:
             return self.parent.get(name)
         else:
             raise Exception(f"Variable '{name}' not defined")
-        return value
 
     def remove(self,name):
         del self.symbols[name]
