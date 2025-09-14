@@ -1,8 +1,24 @@
 does x(par1,par2){
     show(par1,par2);
-    return ;
+    return par1+par2;
 }
-show("calling function");
-a is x(1,2);
+does y(x1){
+    show("inside y");
+    return x1;
+}
+a is y(x);
+show(a(6,8));
+class Y{
+    var is 10;
+    show(var);
+    does y(){
+        show("innside class Y");
+    }
+    a is y(3);
+    itSelf y();
+    show("checking inside y",itSelf y());
+}
+create Y; note: here we created an object.
 show(a);
 
+note: itself Variable assignment and accessing || object method calling.

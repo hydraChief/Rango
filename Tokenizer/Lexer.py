@@ -50,6 +50,9 @@ class Lexer:
             elif char == ';':
                 tokens.append(Token(TokenTypes['TT_TERMINATOR'], value=';',start=self.pos.copy()))
                 self.advance()
+            elif char == '.':
+                tokens.append(Token(TokenTypes['TT_END'], value='.',start=self.pos.copy()))
+                self.advance()
             elif char == ',':
                 tokens.append(Token(TokenTypes['TT_SEPERATOR'], value=',',start=self.pos.copy()))
                 self.advance()
@@ -64,13 +67,17 @@ class Lexer:
             elif char in Letters:
                 tokens.append(self.create_identifier())
                 self.advance()
+            elif char == '-':
+                tokens.append(self.create_attributeAccessor())
             else:
-                start_pos = self.pos.copy()
-                char = self.current
-                error_msg = f"Invalid syntax, '{char}'"
-                self.logger.error(f"Tokenization error", character=char, position=f"line {self.pos.line}, col {self.pos.col}")
+                # start_pos = self.pos.copy()
+                # char = self.current
+                # error_msg = f"Invalid syntax, '{char}'"
+                # self.logger.error(f"Tokenization error", character=char, position=f"line {self.pos.line}, col {self.pos.col}")
+                # self.advance()
+                # return [], error_msg
                 self.advance()
-                return [], error_msg
+                pass
         tokens.append(Token(TokenTypes['TT_EOF'], start=self.pos.copy()))
         self.logger.debug(f"Tokenization completed successfully", total_tokens=len(tokens))
         return tokens, None
@@ -80,6 +87,16 @@ class Lexer:
         if(self.pos.index<len(self.text)):
             self.current=self.text[self.pos.index]
         else : self.current=None
+
+    def create_attributeAccessor(self):
+        start_pos=self.pos.copy()
+        self.advance()
+        if self.current==">" :
+            self.advance()
+            return Token(TokenTypes['TT_ATTRIBUTEACCESSOR'],value='->',start=start_pos,end=self.pos)
+        else:
+            self.logger.warning("Attribute accessor expected '>'")
+            raise Exception("Attribute accessor expected '>'")
 
     def create_number(self):
         num_str=''

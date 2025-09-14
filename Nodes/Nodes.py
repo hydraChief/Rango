@@ -1,4 +1,4 @@
-from SymbolTable import SymbolTable
+from SymbolTable import SymbolTable, ClassSymbolTable
 
 class BinaryNode:
     def __init__(self,left=None,op=None,right=None):
@@ -110,3 +110,43 @@ class ReturnNode:
 class NoneNode:
     def __init__(self):
         self.value="none"
+
+class ClassDefinitionNode:
+    def __init__(self,value,body):
+        self.classBody=body
+        self.value=value
+
+class InstanceCreationNode:
+    def __init__(self,value):
+        self.value=value
+        self.symbolTable=ClassSymbolTable()
+
+class AccessMethodNode:
+    def __init__(self,instanceName,methodName,args=[]):
+        self.instanceName=instanceName
+        self.methodName=methodName
+        self.args=args
+        self.returnValue=None
+        self.isReturn=False
+        self.symbolTable=SymbolTable()
+
+# class AccessInstanceVariableNode:
+#     def __init__(self,instanceName,variable_token_name):
+#         self.instanceName=instanceName
+#         self.variable_token_name=variable_token_name
+
+class AccessItSelfVariableNode:
+    def __init__(self,variable_token_name):
+        self.variable_token_name=variable_token_name
+
+class AccessItSelfMethodNode:
+    def __init__(self,methodName,args=[]):
+        self.methodName=methodName
+        self.args=args
+        self.returnValue=None
+        self.isReturn=False
+        self.symbolTable=SymbolTable()
+class InstanceVariableAssignmentNode:
+    def __init__(self,variable_token_name,variable_node):
+        self.variable_token_name=variable_token_name
+        self.variable_token=variable_node
