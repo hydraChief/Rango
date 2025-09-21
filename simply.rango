@@ -11,7 +11,7 @@ does func(par){
     i is 2;
     till(i gt 0){
         show(i);
-        i is "i"-2;
+        i is i-2;
     }
 }
 func(true);

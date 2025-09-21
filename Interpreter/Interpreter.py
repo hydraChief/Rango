@@ -10,7 +10,7 @@ from SymbolTable import SymbolTable
 class Interpreter():
     def __init__(self,debugFlag=False):
         self.symbolTable=SymbolTable()
-        self.logger = get_logger(debugFlag=True)
+        self.logger = get_logger(debugFlag=debugFlag)
 
     def typeOfValue(self,val):
         if isinstance(val,bool):
