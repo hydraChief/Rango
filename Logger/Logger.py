@@ -8,12 +8,12 @@ class RangoLogger:
     Centralized logging system for the Rango interpreter
     """
 
-    debugFlag=False
     
-    def __init__(self, name="RangoInterpreter"):
+    def __init__(self, name="RangoInterpreter",debugFlag=False):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(logging.DEBUG)
-        
+        self.debugFlag=False
+
         # Prevent duplicate handlers
         if not self.logger.handlers:
             self._setup_handlers()
@@ -174,8 +174,7 @@ def setup_logging(debugFlag=False):
     """Setup global logging instance"""
     global _global_logger
     if _global_logger is None:
-        _global_logger = RangoLogger()
-        _global_logger.debugFlag=debugFlag
+        _global_logger = RangoLogger(debugFlag)
     return _global_logger
 
 def get_logger(debugFlag=False):

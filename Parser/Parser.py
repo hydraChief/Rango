@@ -153,8 +153,8 @@ class Parser:
     def plusMinusHandler(self,node,expression_meta_data):
         res=ParserResult()
         token=self.current_token
-        if expression_meta_data["prev_token_type"] is  not None and expression_meta_data["prev_token_type"]== TokenTypes["TT_STRING"] and token.type==TokenTypes["TT_MINUS"]:
-            return res.failure(f"Operations '{token}' is not available for String Literal")
+        # if expression_meta_data["prev_token_type"] is  not None and expression_meta_data["prev_token_type"]== TokenTypes["TT_STRING"] and token.type==TokenTypes["TT_MINUS"]:
+        #     return res.failure(f"Operations '{token.value}' is not available for String Literal")
         res.register_advance()
         self.advance()
         right=res.register(self.term(expression_meta_data=expression_meta_data))
@@ -166,8 +166,8 @@ class Parser:
     def mulDivHandler(self,node,expression_meta_data):
         res=ParserResult()
         token=self.current_token
-        if expression_meta_data["prev_token_type"] is  not None and expression_meta_data["prev_token_type"]== TokenTypes["TT_STRING"]:
-            return res.failure(f"Operation '{token}' is not available for String Literal")
+        # if expression_meta_data["prev_token_type"] is  not None and expression_meta_data["prev_token_type"]== TokenTypes["TT_STRING"]:
+        #     return res.failure(f"Operation '{token.value}' is not available for String Literal")
         res.register_advance()
         self.advance()
         right=res.register(self.factor(expression_meta_data=expression_meta_data))

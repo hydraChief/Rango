@@ -1,3 +1,21 @@
+show("Name is RANGO");
+does func(par){
+    if(par eq true){
+        show("It's true");
+    }else{
+        show("It's false");
+    }
+    repeat 5 times{
+        show("for----->loop");
+    }
+    i is 2;
+    till(i gt 0){
+        show(i);
+        i is "i"-2;
+    }
+}
+func(true);
+func(false);
 does x(par1,par2){
     show(par1,par2);
     return par1+par2;
@@ -19,4 +37,4 @@ class Y{
 }
 create Y; note: here we created an object.
 Y->y();
-note: itself Variable assignment and accessing || object method calling.
+note: This is code example.
