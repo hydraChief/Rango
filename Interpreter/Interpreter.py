@@ -8,9 +8,9 @@ from Logger import get_logger
 from Tokenizer import TokenTypes
 from SymbolTable import SymbolTable
 class Interpreter():
-    def __init__(self):
+    def __init__(self,debugFlag=False):
         self.symbolTable=SymbolTable()
-        self.logger = get_logger()
+        self.logger = get_logger(debugFlag=debugFlag)
 
     def typeOfValue(self,val):
         if isinstance(val,bool):
@@ -21,7 +21,7 @@ class Interpreter():
             return "float"
         elif isinstance(val,str):
             return "string"
-        elif val is None or val is "nil":
+        elif val is None or val == "nil":
             return "nil"
         else:
             return "function"
@@ -263,7 +263,7 @@ class Interpreter():
         res= ASResult()
         func=None
         if classContext:
-            func=classContext.symbolTable.parent.getFunctionDefinition(node.value)
+            func=classContext.parent.getFunctionDefinition(node.value)
         else:
             func=parentSymbolTable.getFunctionDefinition(node.value) #this parentSymbolTable is for the scope when function is called
         node.symbolTable.parent=func["parentSymbolTable"] #this parentSymbolTable is for the scope where function was declared
@@ -312,16 +312,17 @@ class Interpreter():
         res=ASResult()
         clsDefn = parentSymbolTable.getClassDefinition(node.value)
         node.symbolTable.parent=clsDefn["parentSymbolTable"]
-        res.register(self.visit(clsDefn["value"]["body"],loopContext=None,functionContext=None,classContext=node,parentSymbolTable=node.symbolTable))
+        res.register(self.visit(clsDefn["value"]["body"],loopContext=None,functionContext=None,classContext=node.symbolTable,parentSymbolTable=node.symbolTable))
         if res.error:
             return res
+        node.symbolTable.parent.set(node.value,value={"symbolTable":node.symbolTable},type=node.value,parentSymbolTable=node.symbolTable.parent,isInstance=True)
         return res.success({"value":{"symbolTable":node.symbolTable},"type":node.value,"isInstance":True,"parentSymbolTable":node.symbolTable.parent})
     
     def visitAccessItSelfMethodNode(self,node,parentSymbolTable,classContext=None,**kwargs):
         res= ASResult()
         if classContext is None:
             return res.failure("encountered 'itself' keyword outside a class instance")
-        func=classContext.symbolTable.getFunctionDefinitionFromInstanceOrInheritedOnly(node.methodName) #this parentSymbolTable is for the scope when function is called
+        func=classContext.getFunctionDefinitionFromInstanceOrInheritedOnly(node.methodName) #this parentSymbolTable is for the scope when function is called
         node.symbolTable.parent=func["parentSymbolTable"] #this parentSymbolTable is for the scope where function was declared
         if len(func["value"]["params"]) != len(node.args):
             return res.failure(f"Expected {len(func['value']['params'])} arguments but got {len(node.args)}")
@@ -343,7 +344,7 @@ class Interpreter():
         res=ASResult()
         if classContext is None:
             return res.failure("encountered 'itself' keyword outside a class instance")
-        valueDict = classContext.symbolTable.getFromInstanceOrInheritedOnly(node.variable_token_name)
+        valueDict = classContext.getFromInstanceOrInheritedOnly(node.variable_token_name)
         self.logger.log_variable_access(node.variable_token_name, valueDict["value"])
         return res.success(valueDict)
 
@@ -352,24 +353,48 @@ class Interpreter():
         exp_ans=res.register(self.visit(node.variable_node,parentSymbolTable=parentSymbolTable,classContext=classContext))
         if res.error:
             return 
-        classContext.symbolTable.setInInstance(node.variable_token_name,value=exp_ans["value"],type=exp_ans["type"],parentSymbolTable=classContext.symbolTable)
+        classContext.setInInstance(node.variable_token_name,value=exp_ans["value"],type=exp_ans["type"],parentSymbolTable=classContext)
         self.logger.log_variable_assignment(node.variable_token_name, exp_ans)
         return res.success(exp_ans)
+
+    def visitMethodCallNode(self,node,parentSymbolTable,classContext=None,**kwargs):
+        res=ASResult()
+        obj=parentSymbolTable.get(node.instanceName)
+        if obj and obj["isInstance"]:
+            classContext=obj["value"]["symbolTable"]
+            func=obj["value"]["symbolTable"].getFunctionDefinitionFromInstanceOrInheritedOnly(node.methodName)
+            node.symbolTable.parent=obj["value"]["symbolTable"]
+            if len(func["value"]["params"]) != len(node.args):
+                return res.failure(f"Expected {len(func['value']['params'])} arguments but got {len(node.args)}")
+            
+            for param,arg in zip(func["value"]["params"],node.args):
+                arg=res.register(self.visit(arg,parentSymbolTable=node.symbolTable))
+                if res.error:
+                    return res
+                node.symbolTable.addArgument(name=node.methodName,param=param,arg=arg["value"], arg_type=arg["type"])
+                
+            res.register(self.visit(func["value"]["body"],loopContext=None,functionContext=node,parentSymbolTable=node.symbolTable,classContext=classContext))
+            if res.error:
+                return res
+            if node.isReturn:
+                return res.success({"value":node.returnValue["value"],"type":node.returnValue["type"]})
+            return res.success({"value":"nil","type":"nil"})
+        return res.failure(f"{node.instanceName} is not an Instance or Not defined")
     def visit(self,node,loopContext=None,functionContext=None,parentSymbolTable=None,classContext=None):
         method_name=f"visit{type(node).__name__}"
         method=getattr(self,method_name,self.noVisit)
         return method(node,loopContext=loopContext,functionContext=functionContext,parentSymbolTable=parentSymbolTable,classContext=classContext)
     
     
-def run(filename):
-    logger = get_logger()
+def run(filename,debugFlag=False):
+    logger = get_logger(debugFlag)
     logger.info(f"Starting Rango interpreter execution", filename=filename)
     
     symbol_table = SymbolTable(isGlobalScope=True)
     interpreter = Interpreter()
     
     logger.info("Calling parser...")
-    ast, error = parserRun(filename)
+    ast, error = parserRun(filename,debugFlag)
     
     if ast is None:
         logger.error("Parser returned None")

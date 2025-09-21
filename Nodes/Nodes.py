@@ -121,7 +121,7 @@ class InstanceCreationNode:
         self.value=value
         self.symbolTable=ClassSymbolTable()
 
-class AccessMethodNode:
+class MethodCallNode:
     def __init__(self,instanceName,methodName,args=[]):
         self.instanceName=instanceName
         self.methodName=methodName

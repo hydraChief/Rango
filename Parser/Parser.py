@@ -2,18 +2,18 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode, FunctionDefinitionNode, FunctionCallNode, ReturnNode, NoneNode, AccessItSelfMethodNode, AccessItSelfVariableNode, AccessMethodNode, InstanceCreationNode, ClassDefinitionNode, InstanceVariableAssignmentNode
+from Nodes import NumberNode,BinaryNode,StatementsNode, ShowNode, VariableNode, StringNode, VariableAccessNode,BooleanNode, LogicalNode, ComparatorNode, ConditionalNode, TillNode, RepeatNode, StopNode, ContinueNode, FunctionDefinitionNode, FunctionCallNode, ReturnNode, NoneNode, AccessItSelfMethodNode, AccessItSelfVariableNode, MethodCallNode, InstanceCreationNode, ClassDefinitionNode, InstanceVariableAssignmentNode
 from ErrorHandler import ParserResult
 from Tokenizer import TokenTypes, tokenGenerator, KEYWORDS
 from Logger import get_logger
 
 class Parser:
-    def __init__(self, tokens):
+    def __init__(self, tokens,debugFlag=False):
         self.tokens=tokens
         self.current_token_index=0
         self.current_token=self.tokens[self.current_token_index]
         self.variables:list[str]=[]
-        self.logger = get_logger()
+        self.logger = get_logger(debugFlag=debugFlag)
 
     def advance(self):
         self.current_token_index+=1
@@ -286,27 +286,27 @@ class Parser:
     def assignmentStatement(self):
         res=ParserResult()
         variable_token=self.current_token
-        print(f"DEBUG: assignmentStatement - variable_token: {variable_token.type} = {variable_token.value}")
+        # print(f"DEBUG: assignmentStatement - variable_token: {variable_token.type} = {variable_token.value}")
         res.register_advance()
         self.advance()
         
-        print(f"DEBUG: assignmentStatement - after advance, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+        # print(f"DEBUG: assignmentStatement - after advance, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
         if self.current_token is not None and self.current_token.value!="is":
             return res.failure("Expected 'is'")
 
         res.register_advance()
         self.advance()
 
-        print(f"DEBUG: assignmentStatement - before condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+        # print(f"DEBUG: assignmentStatement - before condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
         node=res.register(self.condExpression())
         if res.error:
             return res
         
-        print(f"DEBUG: assignmentStatement - after condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+        # print(f"DEBUG: assignmentStatement - after condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
 
         self.variables.append(str(variable_token.value))
         if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
-            print(f"DEBUG: assignmentStatement - Expected ';' but got: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+            # print(f"DEBUG: assignmentStatement - Expected ';' but got: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
             return res.failure("Expected ';'")
         res.register_advance()
         self.advance()
@@ -315,27 +315,27 @@ class Parser:
     def assignmentStatementInInstance(self):
         res=ParserResult()
         variable_token=self.current_token
-        print(f"DEBUG: assignmentStatement - variable_token: {variable_token.type} = {variable_token.value}")
+        # print(f"DEBUG: assignmentStatement - variable_token: {variable_token.type} = {variable_token.value}")
         res.register_advance()
         self.advance()
         
-        print(f"DEBUG: assignmentStatement - after advance, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+        # print(f"DEBUG: assignmentStatement - after advance, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
         if self.current_token is not None and self.current_token.value!="is":
             return res.failure("Expected 'is'")
 
         res.register_advance()
         self.advance()
 
-        print(f"DEBUG: assignmentStatement - before condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+        # print(f"DEBUG: assignmentStatement - before condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
         node=res.register(self.condExpression())
         if res.error:
             return res
         
-        print(f"DEBUG: assignmentStatement - after condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+        # print(f"DEBUG: assignmentStatement - after condExpression, current_token: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
 
         self.variables.append(str(variable_token.value))
         if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
-            print(f"DEBUG: assignmentStatement - Expected ';' but got: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
+            # print(f"DEBUG: assignmentStatement - Expected ';' but got: {self.current_token.type if self.current_token else None} = {self.current_token.value if self.current_token else None}")
             return res.failure("Expected ';'")
         res.register_advance()
         self.advance()
@@ -671,6 +671,27 @@ class Parser:
                 return res.success(node)
             
             return res.failure("Expected Identifier")
+        
+        if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"] and (self.current_token_index+1<len(self.tokens) and self.tokens[self.current_token_index+1].type==TokenTypes["TT_ATTRIBUTEACCESSOR"]):
+            objName=self.current_token.value
+            res.register_advance()
+            self.advance()
+            res.register_advance()
+            self.advance()
+            if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"] and (self.current_token_index+1<len(self.tokens) and self.tokens[self.current_token_index+1].type==TokenTypes["TT_LP"]):
+            
+                methodData=res.register(self.methodCallStatement())
+                if res.error:
+                    return res
+                if self.current_token is None or self.current_token.type != TokenTypes["TT_TERMINATOR"]:
+                    return res.failure("Expected ';'")
+                res.register_advance()
+                self.advance()
+                return res.success(MethodCallNode(instanceName=objName,methodName=methodData["value"],args=methodData["args"]))
+            if self.current_token is None or self.current_token.type!=TokenTypes["TT_IDENTIFIER"]:
+                return res.failure("Expected Identifier")
+            return res.failure("Expected '('")
+
         if self.current_token is not None and self.current_token.type==TokenTypes["TT_IDENTIFIER"] and (self.current_token_index+1<len(self.tokens) and self.tokens[self.current_token_index+1].type==TokenTypes["TT_LP"]):
             node=res.register(self.functionCallStatement())
             if res.error:
@@ -744,14 +765,14 @@ class Parser:
     def generate(self):
         return self.expression()
     
-def run(filename):
-    logger = get_logger()
+def run(filename,debugFlag=False):
+    logger = get_logger(debugFlag=debugFlag)
     logger.log_tokenization_start(filename)
     
-    tokens, error=tokenGenerator(filename)
+    tokens, error=tokenGenerator(filename,debugFlag)
     if error==None:
         logger.log_tokenization_complete(filename, len(tokens))
-        parser=Parser(tokens)
+        parser=Parser(tokens,debugFlag=debugFlag)
         ast: ParserResult| None=parser.parse()
         if ast is None:
             logger.error("Parser returned None - Invalid syntax")

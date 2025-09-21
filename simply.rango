@@ -18,5 +18,5 @@ class Y{
     show("checking inside y", itSelf a);
 }
 create Y; note: here we created an object.
-
+Y->y();
 note: itself Variable assignment and accessing || object method calling.

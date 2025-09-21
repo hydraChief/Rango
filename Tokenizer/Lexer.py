@@ -32,9 +32,6 @@ class Lexer:
             elif char == '+':
                 tokens.append(Token(TokenTypes['TT_PLUS'], value ='+', start=self.pos.copy()))
                 self.advance()
-            elif char == '-':
-                tokens.append(Token(TokenTypes['TT_MINUS'], value='-',start=self.pos.copy()))
-                self.advance()
             elif char == '*':
                 tokens.append(Token(TokenTypes['TT_MUL'], value ='*', start=self.pos.copy()))
                 self.advance()
@@ -95,8 +92,7 @@ class Lexer:
             self.advance()
             return Token(TokenTypes['TT_ATTRIBUTEACCESSOR'],value='->',start=start_pos,end=self.pos)
         else:
-            self.logger.warning("Attribute accessor expected '>'")
-            raise Exception("Attribute accessor expected '>'")
+            return Token(TokenTypes['TT_MINUS'], value='-',start=self.pos.copy())
 
     def create_number(self):
         num_str=''
@@ -136,8 +132,8 @@ class Lexer:
             return Token(TokenTypes[KEYWORDS[id_str]],id_str,start_pos,self.pos.copy())
         return Token(TokenTypes['TT_IDENTIFIER'],id_str,start_pos,self.pos.copy())
 
-def tokenGenerator(filename):
-    logger = get_logger()
+def tokenGenerator(filename,debugFlag=False):
+    logger = get_logger(debugFlag=debugFlag)
     logger.debug(f"Reading source file", filename=filename)
     
     try:
@@ -147,6 +143,7 @@ def tokenGenerator(filename):
     except FileNotFoundError:
         error_msg = f"Error: File '{filename}' not found"
         logger.error(error_msg)
+        if(not debugFlag):print(error_msg)
         return None, error_msg
     except Exception as e:
         error_msg = f"Error: Error reading file: {e}"
