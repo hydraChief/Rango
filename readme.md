@@ -1,3 +1,13 @@
+# NOTE: This project is created for learning inner logic of an Interpred language, it is implemented in Pyhton, feel free to contribute and fork!!!
+
+# Build to exe is made using pyinstaller, refer documentation of pyinstaller for more info!!
+
+# How to use??
+```
+  ./Rango.exe simply.rango  /// without debug and logging
+  ./Rango.exe simply.rango  True /// with debug and logging
+``` 
+
 # Interpreter Language Documentation
 
 This document provides an overview of the syntax and features of the **Interpreter Language**.  
@@ -5,7 +15,7 @@ It is an **object-oriented**, **block-scoped** language that supports **higher-o
 
 ---
 
-## ✨ Features
+## Features
 
 - **Object-Oriented Programming**
   - All attributes are **private**
@@ -24,7 +34,38 @@ It is an **object-oriented**, **block-scoped** language that supports **higher-o
 
 ---
 
-## 🔢 Operators
+## Variables
+
+To create a variable:
+``` 
+a is value/expression/function_call/nil
+```
+
+- The keyword `is` is used for assignment.  
+- There is no other way to define a variable.  
+
+Example:
+``` 
+x is 10
+y is x * 2
+```
+
+---
+
+## Comments
+
+To write comments use the `note` keyword:  
+- `note` operator marks the start of a comment  
+- `.` operator marks the end of a comment  
+
+Example:
+``` 
+note This is a comment .
+```
+
+---
+
+## Operators
 
 ### Arithmetic (with precedence)
 - `+` (Addition)  
@@ -46,7 +87,7 @@ It is an **object-oriented**, **block-scoped** language that supports **higher-o
 
 ---
 
-## 🏗️ Classes and Objects
+## Classes and Objects
 
 ### Defining a Class
 ``` 
@@ -89,7 +130,7 @@ myObj->setVar(20);
 
 ---
 
-## 🔄 Control Structures
+## Control Structures
 
 ### If / Else If / Else
 ``` 
@@ -120,7 +161,7 @@ till(x gt 10) {
 
 ---
 
-## ⚙️ Functions
+## Functions
 
 - Functions are **first-class citizens**.  
 - Can be passed as arguments, returned from functions, and assigned to variables.  
@@ -140,38 +181,7 @@ show(apply(square, 5)); // prints 25
 
 ---
 
-## 📌 Variables
-
-To create a variable:
-``` 
-a is value/expression/function_call/nil
-```
-
-- The keyword `is` is used for assignment.  
-- There is no other way to define a variable.  
-
-Example:
-``` 
-x is 10
-y is x * 2
-```
-
----
-
-## 💬 Comments
-
-To write comments use the `note` keyword:  
-- `note` operator marks the start of a comment  
-- `.` operator marks the end of a comment  
-
-Example:
-``` 
-note This is a comment .
-```
-
----
-
-## 📌 Summary
+## Summary
 
 The **Interpreter Language** is designed for clarity and flexibility:
 - Private attributes with enforced access through getters/setters.  
