@@ -1,5 +1,9 @@
 # NOTE: This project is created for learning inner logic of an Interpred language, it is implemented in Pyhton, feel free to contribute and fork!!!
 
+<p align="center">
+<img width="300" height="400" alt="image" src="https://github.com/user-attachments/assets/58c6ed5b-16af-4f6d-8b6a-182e48f24921" />
+</p>
+
 # Build to exe is made using pyinstaller, refer documentation of pyinstaller for more info!!
 
 # How to use??
